@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dil Bingo Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { background-color: #1a103c; color: white; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; }
+        .header-stats { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .stat-box { background: #2d1b5e; padding: 10px; border-radius: 8px; flex: 1; margin: 0 5px; font-size: 12px; }
+        .grid-container { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-height: 60vh; overflow-y: auto; background: #25164f; padding: 10px; border-radius: 12px; }
+        .num-cell { background: #36256c; color: white; border: none; padding: 12px 0; font-size: 14px; border-radius: 6px; font-weight: bold; }
+        .num-cell.selected { background: #ff7a00; }
+        #done-btn { background: #00b050; color: white; border: none; width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; margin-top: 15px; }
+        #done-btn:disabled { background: #555; opacity: 0.5; }
+    </style>
+</head>
+<body>
+    <div class="header-stats">
+        <div class="stat-box">Main Wallet<br><span>100</span></div>
+        <div class="stat-box">Stake<br><span>10</span></div>
+        <div class="stat-box">Time<br><span id="timer" style="color:#ff7a00; font-weight:bold;">30s</span></div>
+    </div>
+    <div class="grid-container" id="numbers-grid"></div>
+    <button id="done-btn" disabled>CONFIRM SELECTION</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+        const grid = document.getElementById('numbers-grid');
+        const doneBtn = document.getElementById('done-btn');
+        let selectedNumbers = [];
+
+        for (let i = 1; i <= 200; i++) {
+            const btn = document.createElement('button');
+            btn.classList.add('num-cell');
+            btn.innerText = i;
+            btn.addEventListener('click', () => {
+                if (selectedNumbers.includes(i)) {
+                    selectedNumbers = selectedNumbers.filter(n => n !== i);
+                    btn.classList.remove('selected');
+                } else if (selectedNumbers.length < 3) {
+                    selectedNumbers.push(i);
+                    btn.classList.add('selected');
+                }
+                doneBtn.disabled = selectedNumbers.length === 0;
+            });
+            grid.appendChild(btn);
+        }
+
+        doneBtn.addEventListener('click', () => {
+            fetch('https://yourusername.pythonanywhere.com/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user: tg.initDataUnsafe?.user?.username, selected: selectedNumbers })
+            }).then(() => { tg.close(); });
+        });
+    </script>
+</body>
+</html>
