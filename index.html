@@ -3,131 +3,110 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dil Bingo Mini App</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Multiplayer Card Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
-        body { 
-            background-color: #1a103c; 
-            color: white; 
-            font-family: sans-serif; 
-            margin: 0; 
-            padding: 15px; 
-            text-align: center; 
-        }
-        .header-stats { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-bottom: 15px; 
-        }
-        .stat-box { 
-            background: #2d1b5e; 
-            padding: 10px; 
-            border-radius: 8px; 
-            flex: 1; 
-            margin: 0 5px; 
-            font-size: 12px; 
-        }
-        .grid-container { 
-            display: grid; 
-            grid-template-columns: repeat(6, 1fr); 
-            gap: 6px; 
-            max-height: 60vh; 
-            overflow-y: auto; 
-            background: #25164f; 
-            padding: 10px; 
-            border-radius: 12px; 
-        }
-        .num-cell { 
-            background: #36256c; 
-            color: white; 
-            border: none; 
-            padding: 12px 0; 
-            font-size: 14px; 
-            border-radius: 6px; 
-            font-weight: bold; 
-        }
-        .num-cell.selected { 
-            background: #ff7a00; 
-        }
-        #done-btn { 
-            background: #00b050; 
-            color: white; 
-            border: none; 
-            width: 100%; 
-            padding: 15px; 
-            font-size: 16px; 
-            font-weight: bold; 
-            border-radius: 8px; 
-            margin-top: 15px; 
-        }
-        #done-btn:disabled { 
-            background: #555; 
-            opacity: 0.5; 
-        }
+        .grid-container { max-height: 55vh; overflow-y: auto; }
     </style>
 </head>
-<body>
-    <div class="header-stats">
-        <div class="stat-box">Main Wallet<br><span>100</span></div>
-        <div class="stat-box">Stake<br><span>10</span></div>
-        <div class="stat-box">Time<br><span id="timer" style="color:#ff7a00; font-weight:bold;">30s</span></div>
+<body class="bg-slate-900 text-white font-sans select-none p-4">
+
+    <div class="text-center my-2">
+        <h1 class="text-xl font-bold text-amber-400">Telegram Mini-Game</h1>
+        <div id="status-banner" class="mt-2 text-lg bg-slate-800 p-2 rounded-lg font-semibold tracking-wide">
+            Loading game status...
+        </div>
     </div>
-    
-    <div class="grid-container" id="numbers-grid"></div>
-    <button id="done-btn" disabled>CONFIRM SELECTION</button>
+
+    <main class="mt-4">
+        <div id="card-grid" class="grid-container grid grid-cols-5 gap-2 p-1 bg-slate-800/50 rounded-xl border border-slate-700">
+            </div>
+    </main>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready(); 
-        tg.expand();
+        // CHANGE THIS URL to your actual PythonAnywhere domain once you set it up!
+        const BACKEND_URL = "https://yourusername.pythonanywhere.com"; 
         
-        const grid = document.getElementById('numbers-grid');
-        const doneBtn = document.getElementById('done-btn');
-        let selectedNumbers = [];
+        // Generate a random mock ID for this mobile session
+        const myUserId = "Player_" + Math.floor(Math.random() * 9000 + 1000);
+        let currentChoice = null;
 
-        // Generate numbers 1 to 200 dynamically
+        // Create 1-200 Cards
+        const grid = document.getElementById('card-grid');
         for (let i = 1; i <= 200; i++) {
             const btn = document.createElement('button');
-            btn.classList.add('num-cell');
-            btn.innerText = i; 
-            
-            btn.addEventListener('click', () => {
-                if (selectedNumbers.includes(i)) {
-                    selectedNumbers = selectedNumbers.filter(n => n !== i);
-                    btn.classList.remove('selected');
-                } else if (selectedNumbers.length < 3) {
-                    selectedNumbers.push(i); // FIXED: Single clean push statement
-                    btn.classList.add('selected');
-                }
-                doneBtn.disabled = selectedNumbers.length === 0;
-            });
+            btn.id = `card-${i}`;
+            btn.innerText = i;
+            btn.className = "p-3 bg-slate-700 hover:bg-slate-600 active:bg-amber-500 font-bold rounded-lg transition-all text-center";
+            btn.onclick = () => selectCard(i);
             grid.appendChild(btn);
         }
 
-        // Demo CountDown Timer
-        let seconds = 30;
-        const timerEl = document.getElementById('timer');
-        const countdown = setInterval(() => {
-            seconds--;
-            timerEl.innerText = seconds + "s";
-            if (seconds <= 0) clearInterval(countdown);
-        }, 1000);
+        async function selectCard(num) {
+            if (currentChoice !== null) return; // Prevent picking multiple
+            currentChoice = num;
+            
+            // Instantly reveal choice visually on phone
+            const btn = document.getElementById(`card-${num}`);
+            btn.className = "p-3 bg-amber-500 text-slate-950 font-black rounded-lg scale-105 ring-4 ring-amber-300";
 
-        // Submit to your live PythonAnywhere backend
-        doneBtn.addEventListener('click', () => {
-            fetch('https://bdej.pythonanywhere.com/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    user: tg.initDataUnsafe?.user?.username || 'Unknown_Player', 
-                    selected: selectedNumbers 
-                })
-            }).then(() => { 
-                tg.close(); 
-            }).catch(err => {
-                alert("Error sending data: " + err);
-            });
-        });
+            // Tell the Python server
+            try {
+                await fetch(`${BACKEND_URL}/select`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ userId: myUserId, card: num })
+                });
+            } catch (err) { console.error("Error sending selection", err); }
+        }
+
+        // Loop execution: Ask Python for room status every 1 second
+        async function updateGameStatus() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/status`);
+                const data = await res.json();
+                const banner = document.getElementById('status-banner');
+
+                if (data.status === "SELECTING") {
+                    banner.innerHTML = `🟢 Select a Card! (${data.players_joined} joined)`;
+                    if (currentChoice === null) resetGridUI();
+                } 
+                else if (data.status === "COUNTDOWN") {
+                    banner.innerHTML = `⏳ Game starts in: <span class="text-amber-400 font-bold text-xl">${data.timer}s</span>`;
+                } 
+                else if (data.status === "REVEAL") {
+                    banner.innerHTML = `🎉 Winner Card: <span class="text-green-400 font-black text-2xl">${data.winner_card}</span> <br><small class="text-xs text-slate-400">Restarting in ${data.reset_timer}s</small>`;
+                    highlightWinner(data.winner_card);
+                }
+            } catch (e) {
+                document.getElementById('status-banner').innerText = "Connecting to game room...";
+            }
+        }
+
+        function resetGridUI() {
+            for (let i = 1; i <= 200; i++) {
+                const btn = document.getElementById(`card-${i}`);
+                btn.className = "p-3 bg-slate-700 font-bold rounded-lg text-center text-white";
+                btn.disabled = false;
+            }
+            currentChoice = null;
+        }
+
+        function highlightWinner(winningNum) {
+            for (let i = 1; i <= 200; i++) {
+                const btn = document.getElementById(`card-${i}`);
+                btn.disabled = true;
+                if (i === winningNum) {
+                    btn.className = "p-3 bg-green-500 text-slate-950 font-black rounded-lg scale-110 animate-bounce";
+                } else {
+                    btn.className = "p-3 bg-slate-800 text-slate-600 font-bold rounded-lg line-through opacity-30";
+                }
+            }
+        }
+
+        // Call the server loop continuously every second
+        setInterval(updateGameStatus, 1000);
     </script>
 </body>
 </html>
+
