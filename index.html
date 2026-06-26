@@ -52,7 +52,8 @@
         #done-btn { 
             background: #00b050; 
             color: white; 
-            border: none; width: 100%; 
+            border: none; 
+            width: 100%; 
             padding: 15px; 
             font-size: 16px; 
             font-weight: bold; 
@@ -95,7 +96,7 @@
                     selectedNumbers = selectedNumbers.filter(n => n !== i);
                     btn.classList.remove('selected');
                 } else if (selectedNumbers.length < 3) {
-                    selectedNumbers.push(i); // FIXED: Correctly records choice 'i'
+                    selectedNumbers.push(i); // FIXED: Single clean push statement
                     btn.classList.add('selected');
                 }
                 doneBtn.disabled = selectedNumbers.length === 0;
