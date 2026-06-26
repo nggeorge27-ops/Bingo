@@ -1,4 +1,4 @@
-y<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,14 +6,64 @@ y<!DOCTYPE html>
     <title>Dil Bingo Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background-color: #1a103c; color: white; font-family: sans-serif; margin: 0; padding: 15px; text-align: center; }
-        .header-stats { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .stat-box { background: #2d1b5e; padding: 10px; border-radius: 8px; flex: 1; margin: 0 5px; font-size: 12px; }
-        .grid-container { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; max-height: 60vh; overflow-y: auto; background: #25164f; padding: 10px; border-radius: 12px; }
-        .num-cell { background: #36256c; color: white; border: none; padding: 12px 0; font-size: 14px; border-radius: 6px; font-weight: bold; }
-        .num-cell.selected { background: #ff7a00; }
-        #done-btn { background: #00b050; color: white; border: none; width: 100%; padding: 15px; font-size: 16px; font-weight: bold; border-radius: 8px; margin-top: 15px; }
-        #done-btn:disabled { background: #555; opacity: 0.5; }
+        body { 
+            background-color: #1a103c; 
+            color: white; 
+            font-family: sans-serif; 
+            margin: 0; 
+            padding: 15px; 
+            text-align: center; 
+        }
+        .header-stats { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-bottom: 15px; 
+        }
+        .stat-box { 
+            background: #2d1b5e; 
+            padding: 10px; 
+            border-radius: 8px; 
+            flex: 1; 
+            margin: 0 5px; 
+            font-size: 12px; 
+        }
+        .grid-container { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 6px; 
+            max-height: 60vh; 
+            overflow-y: auto; 
+            background: #25164f; 
+            padding: 10px; 
+            border-radius: 12px; 
+        }
+        .num-cell { 
+            background: #36256c; 
+            color: white; 
+            border: none; 
+            padding: 12px 0; 
+            font-size: 14px; 
+            border-radius: 6px; 
+            font-weight: bold; 
+        }
+        .num-cell.selected { 
+            background: #ff7a00; 
+        }
+        #done-btn { 
+            background: #00b050; 
+            color: white; 
+            border: none; 
+            width: 100%; 
+            padding: 15px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            border-radius: 8px; 
+            margin-top: 15px; 
+        }
+        #done-btn:disabled { 
+            background: #555; 
+            opacity: 0.5; 
+        }
     </style>
 </head>
 <body>
@@ -22,20 +72,25 @@ y<!DOCTYPE html>
         <div class="stat-box">Stake<br><span>10</span></div>
         <div class="stat-box">Time<br><span id="timer" style="color:#ff7a00; font-weight:bold;">30s</span></div>
     </div>
+    
     <div class="grid-container" id="numbers-grid"></div>
     <button id="done-btn" disabled>CONFIRM SELECTION</button>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
+        tg.ready(); 
+        tg.expand();
+        
         const grid = document.getElementById('numbers-grid');
         const doneBtn = document.getElementById('done-btn');
         let selectedNumbers = [];
 
+        // Generate numbers 1 to 200 dynamically
         for (let i = 1; i <= 200; i++) {
             const btn = document.createElement('button');
             btn.classList.add('num-cell');
-            btn.innerText = i;
+            btn.innerText = i; 
+            
             btn.addEventListener('click', () => {
                 if (selectedNumbers.includes(i)) {
                     selectedNumbers = selectedNumbers.filter(n => n !== i);
@@ -49,12 +104,29 @@ y<!DOCTYPE html>
             grid.appendChild(btn);
         }
 
+        // Demo CountDown Timer
+        let seconds = 30;
+        const timerEl = document.getElementById('timer');
+        const countdown = setInterval(() => {
+            seconds--;
+            timerEl.innerText = seconds + "s";
+            if (seconds <= 0) clearInterval(countdown);
+        }, 1000);
+
+        // Submit to your live PythonAnywhere backend
         doneBtn.addEventListener('click', () => {
-            fetch('https://yourusername.pythonanywhere.com/submit', {
+            fetch('https://bdej.pythonanywhere.com/submit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user: tg.initDataUnsafe?.user?.username, selected: selectedNumbers })
-            }).then(() => { tg.close(); });
+                body: JSON.stringify({ 
+                    user: tg.initDataUnsafe?.user?.username || 'Unknown_Player', 
+                    selected: selectedNumbers 
+                })
+            }).then(() => { 
+                tg.close(); 
+            }).catch(err => {
+                alert("Error sending data: " + err);
+            });
         });
     </script>
 </body>
