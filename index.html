@@ -24,8 +24,8 @@
     </main>
 
     <script>
-        // CHANGE THIS URL to your actual PythonAnywhere domain once you set it up!
-        const BACKEND_URL = "https://yourusername.pythonanywhere.com"; 
+        // Connected directly to your PythonAnywhere server
+        const BACKEND_URL = "https://Bdej.pythonanywhere.com"; 
         
         // Generate a random mock ID for this mobile session
         const myUserId = "Player_" + Math.floor(Math.random() * 9000 + 1000);
@@ -50,7 +50,7 @@
             const btn = document.getElementById(`card-${num}`);
             btn.className = "p-3 bg-amber-500 text-slate-950 font-black rounded-lg scale-105 ring-4 ring-amber-300";
 
-            // Tell the Python server
+            // Tell your Python server
             try {
                 await fetch(`${BACKEND_URL}/select`, {
                     method: "POST",
@@ -109,4 +109,3 @@
     </script>
 </body>
 </html>
-
