@@ -1,111 +1,193 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="am">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Multiplayer Card Game</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>VIP BINGO</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        .grid-container { max-height: 55vh; overflow-y: auto; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1540;
+            color: white;
+            margin: 0;
+            padding: 10px;
+            text-align: center;
+        }
+        .header-box {
+            background-color: #251f5c;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .timer-badge {
+            background-color: #ffc107;
+            color: #1a1540;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 16px;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 6px;
+            max-height: 280px;
+            overflow-y: auto;
+            border: 1px solid #3d3580;
+            padding: 10px;
+            border-radius: 10px;
+            background: #251f5c;
+        }
+        .card-btn {
+            background-color: #3d3580;
+            border: none;
+            border-radius: 6px;
+            padding: 10px 0;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+        }
+        .card-btn.my-selection {
+            background-color: #00c853 !important;
+        }
+        .cartel-container {
+            margin-top: 20px;
+            background: #251f5c;
+            border-radius: 12px;
+            padding: 15px;
+            display: inline-block;
+            width: 90%;
+            max-width: 320px;
+            border: 1px solid #3d3580;
+        }
+        .cartel-title {
+            background: #ff9800;
+            color: #1a1540;
+            padding: 4px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+        .bingo-table { width: 100%; border-collapse: separate; border-spacing: 4px; }
+        .bingo-th { background-color: #007bff; color: white; font-weight: bold; padding: 8px 0; border-radius: 4px; }
+        .bingo-th:nth-child(2) { background-color: #6f42c1; }
+        .bingo-th:nth-child(3) { background-color: #e83e8c; }
+        .bingo-th:nth-child(4) { background-color: #28a745; }
+        .bingo-th:nth-child(5) { background-color: #fd7e14; }
+        .bingo-td { background-color: #ffffff; color: #333; font-weight: bold; padding: 10px 0; border-radius: 4px; }
+        .star-cell { background-color: #00c853; color: white; }
+        .go-btn {
+            background-color: #ff9800;
+            color: #1a1540;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            margin-top: 15px;
+            cursor: pointer;
+            display: none;
+            width: 90%;
+            max-width: 320px;
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-white font-sans select-none p-4">
+<body>
 
-    <div class="text-center my-2">
-        <h1 class="text-xl font-bold text-amber-400">Telegram Mini-Game</h1>
-        <div id="status-banner" class="mt-2 text-lg bg-slate-800 p-2 rounded-lg font-semibold tracking-wide">
-            Loading game status...
-        </div>
+    <div class="header-box">
+        👑 VIP BINGO LOBBY
+        <br>
+        <div class="timer-badge" id="countdown">40 s</div>
     </div>
 
-    <main class="mt-4">
-        <div id="card-grid" class="grid-container grid grid-cols-5 gap-2 p-1 bg-slate-800/50 rounded-xl border border-slate-700">
-            </div>
-    </main>
+    <div class="grid-container" id="bingo-grid"></div>
+
+    <button class="go-btn" id="start-game-btn" onclick="goToGame()">ወደ ጨዋታው ግባ 🚀</button>
+
+    <div class="cartel-container" id="cartel-panel" style="display: none;">
+        <div class="cartel-title" id="cartel-label">CARTEL #--</div>
+        <table class="bingo-table">
+            <tr>
+                <th class="bingo-th">B</th>
+                <th class="bingo-th">I</th>
+                <th class="bingo-th">N</th>
+                <th class="bingo-th">G</th>
+                <th class="bingo-th">O</th>
+            </tr>
+            <tbody id="bingo-body"></tbody>
+        </table>
+    </div>
 
     <script>
-        // Connected directly to your PythonAnywhere server
-        const BACKEND_URL = "https://Bdej.pythonanywhere.com"; 
-        
-        // Generate a random mock ID for this mobile session
-        const myUserId = "Player_" + Math.floor(Math.random() * 9000 + 1000);
-        let currentChoice = null;
+        let mySelectedCard = null;
+        const gridElement = document.getElementById('bingo-grid');
 
-        // Create 1-200 Cards
-        const grid = document.getElementById('card-grid');
         for (let i = 1; i <= 200; i++) {
             const btn = document.createElement('button');
-            btn.id = `card-${i}`;
+            btn.className = 'card-btn';
             btn.innerText = i;
-            btn.className = "p-3 bg-slate-700 hover:bg-slate-600 active:bg-amber-500 font-bold rounded-lg transition-all text-center";
-            btn.onclick = () => selectCard(i);
-            grid.appendChild(btn);
+            btn.id = `card-${i}`;
+            btn.addEventListener('click', () => selectThisCard(i));
+            gridElement.appendChild(btn);
         }
 
-        async function selectCard(num) {
-            if (currentChoice !== null) return; // Prevent picking multiple
-            currentChoice = num;
-            
-            // Instantly reveal choice visually on phone
-            const btn = document.getElementById(`card-${num}`);
-            btn.className = "p-3 bg-amber-500 text-slate-950 font-black rounded-lg scale-105 ring-4 ring-amber-300";
-
-            // Tell your Python server
-            try {
-                await fetch(`${BACKEND_URL}/select`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ userId: myUserId, card: num })
-                });
-            } catch (err) { console.error("Error sending selection", err); }
+        function selectThisCard(cardNum) {
+            if (mySelectedCard) {
+                document.getElementById(`card-${mySelectedCard}`).classList.remove('my-selection');
+            }
+            mySelectedCard = cardNum;
+            document.getElementById(`card-${cardNum}`).classList.add('my-selection');
+            document.getElementById('cartel-panel').style.display = 'inline-block';
+            document.getElementById('cartel-label').innerText = `CARTEL #${cardNum}`;
+            generateBingoMatrix();
         }
 
-        // Loop execution: Ask Python for room status every 1 second
-        async function updateGameStatus() {
-            try {
-                const res = await fetch(`${BACKEND_URL}/status`);
-                const data = await res.json();
-                const banner = document.getElementById('status-banner');
-
-                if (data.status === "SELECTING") {
-                    banner.innerHTML = `🟢 Select a Card! (${data.players_joined} joined)`;
-                    if (currentChoice === null) resetGridUI();
-                } 
-                else if (data.status === "COUNTDOWN") {
-                    banner.innerHTML = `⏳ Game starts in: <span class="text-amber-400 font-bold text-xl">${data.timer}s</span>`;
-                } 
-                else if (data.status === "REVEAL") {
-                    banner.innerHTML = `🎉 Winner Card: <span class="text-green-400 font-black text-2xl">${data.winner_card}</span> <br><small class="text-xs text-slate-400">Restarting in ${data.reset_timer}s</small>`;
-                    highlightWinner(data.winner_card);
+        function generateBingoMatrix() {
+            const tbody = document.getElementById('bingo-body');
+            tbody.innerHTML = '';
+            for (let row = 0; row < 5; row++) {
+                const tr = document.createElement('tr');
+                for (let col = 0; col < 5; col++) {
+                    const td = document.createElement('td');
+                    td.className = 'bingo-td';
+                    if (row === 2 && col === 2) {
+                        td.innerText = '★';
+                        td.classList.add('star-cell');
+                    } else {
+                        td.innerText = Math.floor(Math.random() * 90) + 1;
+                    }
+                    tr.appendChild(td);
                 }
-            } catch (e) {
-                document.getElementById('status-banner').innerText = "Connecting to game room...";
+                tbody.appendChild(tr);
             }
         }
 
-        function resetGridUI() {
-            for (let i = 1; i <= 200; i++) {
-                const btn = document.getElementById(`card-${i}`);
-                btn.className = "p-3 bg-slate-700 font-bold rounded-lg text-center text-white";
-                btn.disabled = false;
-            }
-            currentChoice = null;
-        }
-
-        function highlightWinner(winningNum) {
-            for (let i = 1; i <= 200; i++) {
-                const btn = document.getElementById(`card-${i}`);
-                btn.disabled = true;
-                if (i === winningNum) {
-                    btn.className = "p-3 bg-green-500 text-slate-950 font-black rounded-lg scale-110 animate-bounce";
+        let timeLeft = 40;
+        const interval = setInterval(() => {
+            timeLeft--;
+            document.getElementById('countdown').innerText = timeLeft + ' s';
+            if (timeLeft <= 0) {
+                clearInterval(interval);
+                document.querySelectorAll('.card-btn').forEach(b => b.disabled = true);
+                if(mySelectedCard) {
+                    document.getElementById('start-game-btn').style.display = 'inline-block';
                 } else {
-                    btn.className = "p-3 bg-slate-800 text-slate-600 font-bold rounded-lg line-through opacity-30";
+                    alert("ካርድ አልመረጥክም! ገጹን አድሰህ ድጋሚ ምረጥ።");
                 }
             }
-        }
+        }, 1000);
 
-        // Call the server loop continuously every second
-        setInterval(updateGameStatus, 1000);
+        function goToGame() {
+            window.location.href = 'game.html';
+        }
     </script>
 </body>
 </html>
